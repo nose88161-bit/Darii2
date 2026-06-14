@@ -1,6 +1,9 @@
 <meta name='viewport' content='width=device-width, initial-scale=1'/><div class="notes-page">
   <div id="linksContainer"></div>
-</div><style>* {
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script><style>* {
   box-sizing: border-box;
   -webkit-tap-highlight-color: transparent;
 }
@@ -165,7 +168,20 @@ body {
 
 .copy-btn.error {
   color: #ff2b4f;
-}</style><script>const enlaces = [
+}</style><script>const firebaseConfig = {
+  apiKey: "TU_API_KEY",
+  authDomain: "TU_PROYECTO.firebaseapp.com",
+  databaseURL: "https://TU_PROYECTO-default-rtdb.firebaseio.com",
+  projectId: "TU_PROYECTO",
+  storageBucket: "TU_PROYECTO.appspot.com",
+  messagingSenderId: "TU_ID",
+  appId: "TU_APP_ID"
+};
+
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+
+const enlaces = [
   { nombre: "anival3474", url: "https://www.tiktok.com/@anival3474" },
   { nombre: "turbo.tutoblox", url: "https://www.tiktok.com/@turbo.tutoblox" },
   { nombre: "dragon.fire.ff", url: "https://www.tiktok.com/@dragon.fire.ff" },
@@ -280,8 +296,31 @@ document.querySelectorAll('.note-row').forEach(row => {
   const copyBtn = row.querySelector('.copy-btn');
   const linkName = row.querySelector('.note-link');
 
+  const id = card.dataset.id;
+  const ref = db.ref("links/" + id);
+
+  ref.on("value", snapshot => {
+    const data = snapshot.val() || {};
+
+    check.checked = data.checked === true;
+    card.classList.toggle("used", check.checked);
+
+    statusText.textContent = data.status || "";
+    statusText.className = "status-text";
+
+    if (data.status === "con visitas") {
+      statusText.classList.add("green");
+    }
+
+    if (data.status === "sin visitas") {
+      statusText.classList.add("red");
+    }
+  });
+
   check.addEventListener('change', () => {
-    card.classList.toggle('used', check.checked);
+    ref.update({
+      checked: check.checked
+    });
   });
 
   menuBtn.addEventListener('click', (e) => {
@@ -293,14 +332,9 @@ document.querySelectorAll('.note-row').forEach(row => {
     option.addEventListener('click', () => {
       const status = option.dataset.status;
 
-      statusText.textContent = status;
-      statusText.className = 'status-text';
-
-      if (status === 'con visitas') {
-        statusText.classList.add('green');
-      } else {
-        statusText.classList.add('red');
-      }
+      ref.update({
+        status: status
+      });
 
       statusMenu.classList.remove('show');
     });
